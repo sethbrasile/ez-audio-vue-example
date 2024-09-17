@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Track } from 'ez-audio'
-import { computed, defineProps } from 'vue'
+import { computed } from 'vue'
 
 const props = defineProps<{
   track?: Track
@@ -27,7 +27,7 @@ function seek(e: any) {
 function changeVolume(e: any) {
   const height = e.target.offsetParent.offsetHeight
   const parentOffset
-      = e.target.parentNode.getBoundingClientRect().top + window.pageYOffset
+      = e.target.parentNode.getBoundingClientRect().top + window.scrollY
   const offset = e.pageY - parentOffset - document.documentElement.clientTop
   const adjustedHeight = height * 0.8
   const adjustedOffset = offset - (height - adjustedHeight) / 2
