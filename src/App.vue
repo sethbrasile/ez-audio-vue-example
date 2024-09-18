@@ -11,9 +11,9 @@ interface Song {
 }
 
 const selectedSong = ref<Song | null>(null)
-const track = computed(() => selectedSong.value?.trackInstance)
+// @ts-expect-error don't know why TS is screwing up this typing... I don't think I'm doing anything wrong?
+const track = computed<Track | undefined>(() => selectedSong.value?.trackInstance)
 const loading = ref(false)
-
 const tracks: Song[] = [
   {
     name: 'barely-there',
@@ -41,16 +41,6 @@ async function selectTrack(name: string) {
 
   selectedSong.value = track
   loading.value = false
-}
-
-function togglePlay() {
-  const track = selectedSong.value?.trackInstance
-  if (track?.isPlaying) {
-    track.pause()
-  }
-  else {
-    track?.play()
-  }
 }
 </script>
 
@@ -82,14 +72,10 @@ function togglePlay() {
 
   <Mp3Player
     v-if="track"
-    :percent-played="track.percentPlayed"
-    :percent-gain="track.percentGain"
-    :position="track.position.string"
-    :duration="track.position.string"
-    :is-playing="track.isPlaying"
+    :track="track"
     @change-gain="(newGain) => track?.changeGainTo(newGain).from('inverseRatio')"
     @seek="(newPosition) => track?.seek(newPosition).from('ratio')"
-    @toggle-play="togglePlay"
+    @toggle-play="track.isPlaying ? track.pause() : track.play()"
   />
 
   <div v-if="loading" class="spinner">

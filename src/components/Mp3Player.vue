@@ -1,17 +1,14 @@
 <script setup lang="ts">
+import type { Track } from 'ez-audio'
 import { computed } from 'vue'
 
 const props = defineProps<{
-  percentPlayed: number
-  percentGain: number
-  position: string
-  duration: string
-  isPlaying: boolean
+  track: Track
 }>()
 
 const emits = defineEmits(['togglePlay', 'seek', 'changeGain'])
-const percentPlayed = computed(() => `width: ${props.percentPlayed}%;`)
-const percentGain = computed(() => `height: ${props.percentGain}%;`)
+const percentPlayed = computed(() => `width: ${props.track.percentPlayed}%;`)
+const percentGain = computed(() => `height: ${props.track.percentGain}%;`)
 
 function seek(e: any) {
   const width = e.target.offsetParent.offsetWidth
@@ -27,18 +24,17 @@ function changeVolume(e: any) {
   const adjustedHeight = height * 0.8
   const adjustedOffset = offset - (height - adjustedHeight) / 2
   const newGain = adjustedOffset / adjustedHeight
-
   emits('changeGain', newGain)
 }
 </script>
 
 <template>
   <div class="audioplayer">
-    <div role="button" class="play-pause" :class="{ playing: isPlaying }" @click="emits('togglePlay')">
+    <div role="button" class="play-pause" :class="{ playing: track.isPlaying }" @click="emits('togglePlay')">
       <a />
     </div>
     <div class="time current">
-      {{ position }}
+      {{ track.position }}
     </div>
 
     <div role="button" class="bar" @click="seek">
@@ -47,7 +43,7 @@ function changeVolume(e: any) {
     </div>
 
     <div class="time duration">
-      {{ duration }}
+      {{ track.duration }}
     </div>
 
     <div role="button" class="volume" @click="changeVolume">
