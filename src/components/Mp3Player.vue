@@ -1,27 +1,22 @@
 <script setup lang="ts">
-import type { Track } from 'ez-audio'
 import { computed } from 'vue'
 
 const props = defineProps<{
-  track?: Track
+  percentPlayed: number
+  percentGain: number
+  position: string
+  duration: string
+  isPlaying: boolean
 }>()
 
-const percentPlayed = computed(() => `width: ${props.track.percentPlayed}%;`)
-const percentGain = computed(() => `height: ${props.track.percentGain}%;`)
-
-async function togglePlay() {
-  if (props.track.isPlaying) {
-    props.track.pause()
-  }
-  else {
-    props.track.play()
-  }
-}
+const emits = defineEmits(['togglePlay', 'seek', 'changeGain'])
+const percentPlayed = computed(() => `width: ${props.percentPlayed}%;`)
+const percentGain = computed(() => `height: ${props.percentGain}%;`)
 
 function seek(e: any) {
   const width = e.target.offsetParent.offsetWidth
   const newPosition = e.offsetX / width
-  props.track.seek(newPosition).from('ratio')
+  emits('seek', newPosition)
 }
 
 function changeVolume(e: any) {
@@ -33,17 +28,17 @@ function changeVolume(e: any) {
   const adjustedOffset = offset - (height - adjustedHeight) / 2
   const newGain = adjustedOffset / adjustedHeight
 
-  props.track.changeGainTo(newGain).from('inverseRatio')
+  emits('changeGain', newGain)
 }
 </script>
 
 <template>
-  <div v-if="track" class="audioplayer">
-    <div role="button" class="play-pause" :class="{ playing: track.isPlaying }" @click="togglePlay">
+  <div class="audioplayer">
+    <div role="button" class="play-pause" :class="{ playing: isPlaying }" @click="emits('togglePlay')">
       <a />
     </div>
     <div class="time current">
-      {{ track.position.string }}
+      {{ position }}
     </div>
 
     <div role="button" class="bar" @click="seek">
@@ -52,7 +47,7 @@ function changeVolume(e: any) {
     </div>
 
     <div class="time duration">
-      {{ track.duration.string }}
+      {{ duration }}
     </div>
 
     <div role="button" class="volume" @click="changeVolume">

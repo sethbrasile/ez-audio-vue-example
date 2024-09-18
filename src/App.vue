@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { createTrack, initAudio, type Track } from 'ez-audio'
-import { ref } from 'vue'
+import type { Track } from 'ez-audio'
+import { createTrack, initAudio } from 'ez-audio'
+import { computed, ref } from 'vue'
 import Mp3Player from './components/Mp3Player.vue'
 
 interface Song {
@@ -9,27 +10,26 @@ interface Song {
   description: string
 }
 
-const selectedTrack = ref<Song | null>(null)
+const selectedSong = ref<Song | null>(null)
+const track = computed(() => selectedSong.value?.trackInstance)
 const loading = ref(false)
 
 const tracks: Song[] = [
   {
     name: 'barely-there',
-    trackInstance: null,
     description: `I used to play bass and sing ("clean" vocals) in a metalcore band called "Bringing Down Broadway" and this is one of our songs. The album is titled, "It's all Gone South", I recorded it myself, and it was a complete failure in every measurable way. I think it's awesome.`,
   },
   {
     name: 'do-wah-diddy',
-    trackInstance: null,
     description: `My friend David Denison and I recorded this song in a living room with a Korg Electribe, a garbage laptop, and a broken logitech PC mic (we had to literally hold it together while using it), for fun. This is from about 2008. David is "rapping" and I'm singing. If you can't tell, Fallout Boy and that Gym Class Heroes song was popular at the time lol. This is the only place that this song has ever been published.`,
   },
 ]
 
 async function selectTrack(name: string) {
-  selectedTrack.value?.trackInstance.pause()
+  selectedSong.value?.trackInstance?.pause()
 
   loading.value = true
-  selectedTrack.value = null
+  selectedSong.value = null
 
   const track = tracks.find(track => track.name === name)
   if (!track)
@@ -39,8 +39,18 @@ async function selectTrack(name: string) {
     track.trackInstance = await createTrack(`node_modules/ez-audio/dist/${name}.mp3`)
   }
 
-  selectedTrack.value = track
+  selectedSong.value = track
   loading.value = false
+}
+
+function togglePlay() {
+  const track = selectedSong.value?.trackInstance
+  if (track?.isPlaying) {
+    track.pause()
+  }
+  else {
+    track?.play()
+  }
 }
 </script>
 
@@ -61,16 +71,26 @@ async function selectTrack(name: string) {
     </div>
 
     <div class="description">
-      <p v-if="!selectedTrack" id="description">
+      <p v-if="!selectedSong" id="description">
         Select a track...
       </p>
       <p v-else>
-        {{ selectedTrack.description }}
+        {{ selectedSong.description }}
       </p>
     </div>
   </div>
 
-  <Mp3Player v-if="selectedTrack?.trackInstance" :track="selectedTrack.trackInstance" />
+  <Mp3Player
+    v-if="track"
+    :percent-played="track.percentPlayed"
+    :percent-gain="track.percentGain"
+    :position="track.position.string"
+    :duration="track.position.string"
+    :is-playing="track.isPlaying"
+    @change-gain="(newGain) => track?.changeGainTo(newGain).from('inverseRatio')"
+    @seek="(newPosition) => track?.seek(newPosition).from('ratio')"
+    @toggle-play="togglePlay"
+  />
 
   <div v-if="loading" class="spinner">
     <div class="rect1" />
