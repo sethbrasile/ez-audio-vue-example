@@ -3,6 +3,7 @@ import type { Track } from 'ez-audio'
 import { createTrack, initAudio } from 'ez-audio'
 import { computed, ref } from 'vue'
 import Mp3Player from './components/Mp3Player.vue'
+import { titleCase } from './utils'
 
 interface Song {
   name: string
@@ -10,11 +11,17 @@ interface Song {
   description: string
 }
 
+const loading = ref(false)
+const selectedSong = ref<Song | null>(null)
+// @ts-expect-error TS is doing something weird here
+const track = computed<Track | undefined>(() => selectedSong.value?.trackInstance)
+
 // "barely-there.mp3" and "do-wah-diddy.mp3" are mp3 files located in this project's assets folder
-const tracks: Song[] = [
+const songs: Song[] = [
   {
     name: 'barely-there',
     description: `I used to play bass and sing ("clean" vocals) in a metalcore band called "Bringing Down Broadway" and this is one of our songs. The album is titled, "It's all Gone South", I recorded it myself, and it was a complete failure in every measurable way. I think it's awesome.`,
+    // trackInstance - After it's loaded, we will place the audio data here
   },
   {
     name: 'do-wah-diddy',
@@ -22,26 +29,18 @@ const tracks: Song[] = [
   },
 ]
 
-const selectedSong = ref<Song | null>(null)
-// @ts-expect-error TS is doing something weird here
-const track = computed<Track | undefined>(() => selectedSong.value?.trackInstance) as Track
-const loading = ref(false)
-
-async function selectTrack(name: string) {
+async function selectSong(song: Song) {
   selectedSong.value?.trackInstance?.pause()
 
   loading.value = true
   selectedSong.value = null
 
-  const track = tracks.find(track => track.name === name)
-  if (!track)
-    throw (new Error('Balls! Did not find that track!'))
-  if (!track.trackInstance) {
+  if (!song.trackInstance) {
     await initAudio()
-    track.trackInstance = await createTrack(`/${name}.mp3`)
+    song.trackInstance = await createTrack(`/${name}.mp3`)
   }
 
-  selectedSong.value = track
+  selectedSong.value = song
   loading.value = false
 }
 </script>
@@ -52,11 +51,8 @@ async function selectTrack(name: string) {
     <div class="select">
       <table>
         <tbody>
-          <tr class="pointer" @click="selectTrack('barely-there')">
-            <td>Barely There</td>
-          </tr>
-          <tr class="pointer" @click="selectTrack('do-wah-diddy')">
-            <td>Do Wah Diddy</td>
+          <tr v-for="song in songs" :key="song.name" class="pointer" @click="selectSong(song)">
+            <td>{{ titleCase(song.name) }}</td>
           </tr>
         </tbody>
       </table>
