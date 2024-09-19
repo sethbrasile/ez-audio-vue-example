@@ -10,10 +10,7 @@ interface Song {
   description: string
 }
 
-const selectedSong = ref<Song | null>(null)
-// @ts-expect-error don't know why TS is screwing up this typing... I don't think I'm doing anything wrong?
-const track = computed<Track | undefined>(() => selectedSong.value?.trackInstance)
-const loading = ref(false)
+// "barely-there.mp3" and "do-wah-diddy.mp3" are mp3 files located in this project's assets folder
 const tracks: Song[] = [
   {
     name: 'barely-there',
@@ -24,6 +21,11 @@ const tracks: Song[] = [
     description: `My friend David Denison and I recorded this song in a living room with a Korg Electribe, a garbage laptop, and a broken logitech PC mic (we had to literally hold it together while using it), for fun. This is from about 2008. David is "rapping" and I'm singing. If you can't tell, Fallout Boy and that Gym Class Heroes song was popular at the time lol. This is the only place that this song has ever been published.`,
   },
 ]
+
+const selectedSong = ref<Song | null>(null)
+// @ts-expect-error TS is doing something weird here
+const track = computed<Track | undefined>(() => selectedSong.value?.trackInstance) as Track
+const loading = ref(false)
 
 async function selectTrack(name: string) {
   selectedSong.value?.trackInstance?.pause()
@@ -36,7 +38,7 @@ async function selectTrack(name: string) {
     throw (new Error('Balls! Did not find that track!'))
   if (!track.trackInstance) {
     await initAudio()
-    track.trackInstance = await createTrack(`node_modules/ez-audio/dist/${name}.mp3`)
+    track.trackInstance = await createTrack(`/${name}.mp3`)
   }
 
   selectedSong.value = track
@@ -61,17 +63,18 @@ async function selectTrack(name: string) {
     </div>
 
     <div class="description">
-      <p v-if="!selectedSong" id="description">
-        Select a track...
+      <p v-if="selectedSong">
+        {{ selectedSong.description }}
       </p>
       <p v-else>
-        {{ selectedSong.description }}
+        Select a track...
       </p>
     </div>
   </div>
 
+  <!-- Mp3Player accepts a Track instance and emits 3 events -->
   <Mp3Player
-    v-if="track"
+    v-if="!loading && track"
     :track="track"
     @change-gain="(newGain) => track?.changeGainTo(newGain).from('inverseRatio')"
     @seek="(newPosition) => track?.seek(newPosition).from('ratio')"

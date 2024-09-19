@@ -11,19 +11,36 @@ const percentPlayed = computed(() => `width: ${props.track.percentPlayed}%;`)
 const percentGain = computed(() => `height: ${props.track.percentGain}%;`)
 
 function seek(e: any) {
+  // Get width of clicked element's parent
   const width = e.target.offsetParent.offsetWidth
+  // Divide click position by parent width
   const newPosition = e.offsetX / width
+  // Set new position based on ratio
   emits('seek', newPosition)
 }
 
 function changeVolume(e: any) {
-  const height = e.target.offsetParent.offsetHeight
+  // Get height of clicked element's parent
+  const height = e.target?.offsetParent.offsetHeight
   const parentOffset
-      = e.target.parentNode.getBoundingClientRect().top + window.scrollY
+    = e.target?.parentNode.getBoundingClientRect().top + window.scrollY
+  // Get click position
   const offset = e.pageY - parentOffset - document.documentElement.clientTop
+  // Adjust height because height of element is 80% of parent's
   const adjustedHeight = height * 0.8
+  // Adjust click position because height of element is 80% of parent's,
+  // and element is centered vertically
   const adjustedOffset = offset - (height - adjustedHeight) / 2
-  const newGain = adjustedOffset / adjustedHeight
+
+  // We don't want to set gain out of bounds
+  let newGain = adjustedOffset / adjustedHeight
+  if (newGain < 0)
+    newGain = 0
+  if (newGain > 1)
+    newGain = 1
+
+  // Set new gain based on inverse ratio because Y coordinate is measured
+  // from the top, but we want gain to be measured from the bottom
   emits('changeGain', newGain)
 }
 </script>
@@ -34,7 +51,9 @@ function changeVolume(e: any) {
       <a />
     </div>
     <div class="time current">
-      {{ track.position }}
+      <!-- track.position and track.duration output a few different formats
+    and we are interested in the "string" variant -->
+      {{ track.position.string }}
     </div>
 
     <div role="button" class="bar" @click="seek">
@@ -43,7 +62,7 @@ function changeVolume(e: any) {
     </div>
 
     <div class="time duration">
-      {{ track.duration }}
+      {{ track.duration.string }}
     </div>
 
     <div role="button" class="volume" @click="changeVolume">
